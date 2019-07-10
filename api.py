@@ -93,7 +93,7 @@ def refresh():
     
     if current_user:
         user = {
-            'id': current_user.get('id')
+            'id': current_user.get('id'),
             'email': current_user.get('email')
         }
         res = { 'message': 'Token refreshed succesfully.', 'errorCode': 0, 'token': create_access_token(identity=user) }
