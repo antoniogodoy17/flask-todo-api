@@ -93,8 +93,8 @@ def refresh():
     
     if current_user:
         user = {
-            'id': current_user.get('id'),
-            'email': current_user.get('email')
+            'email': current_user.get('email'),
+            'id': str(current_user.get('id'))
         }
         res = { 'message': 'Token refreshed succesfully.', 'errorCode': 0, 'token': create_access_token(identity=user) }
         return Response(json.dumps(res), status=400, mimetype='application/json')
