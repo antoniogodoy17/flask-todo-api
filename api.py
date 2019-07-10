@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt
 from pymongo import MongoClient
 from flask import Flask, request, jsonify, Response
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token, jwt_refresh_token_required, create_refresh_token, get_jwt_identity
 
 app = Flask(__name__)
 
@@ -59,13 +59,13 @@ def login():
   password = req.get('password', None)
 
   if not email or not password:
-    res = { 'message': 'Email or password missing.', 'errorCode': 1, 'user': None, 'token': None}
+    res = { 'message': 'Email or password missing.', 'errorCode': 1, 'user': None, 'token': None, 'refreshToken': None }
     return Response(json.dumps(res), status=500, mimetype='application/json')
 
   # Search in db for user
   existing_user = db.users.find_one({ 'email': email })
   if not existing_user:
-    res = { 'message': 'User not found.', 'errorCode': 1, 'user': None, 'token': None }
+    res = { 'message': 'User not found.', 'errorCode': 1, 'user': None, 'token': None, 'refreshToken': None }
     return Response(json.dumps(res), status=404, mimetype='application/json')
 
   # Compare passwords
@@ -77,13 +77,30 @@ def login():
 
     # Return data and token
     token = create_access_token(identity=user)
-    res = { 'message': 'User logged in succesfully', 'errorCode': 0, 'user': user, 'token': token}
+    refreshToken = create_refresh_token(identity=user)
+    res = { 'message': 'User logged in succesfully', 'errorCode': 0, 'user': user, 'token': token, 'refreshToken': refreshToken }
 
     return Response(json.dumps(res), status=200, mimetype='application/json')
 
   else:
     res = { 'message': 'Incorrect email or password.', 'errorCode': 1, 'user': None, 'token': None }
     return Response(json.dumps(res), status=400, mimetype='application/json')
+
+@app.route('/auth/refresh', metods=['GET'])
+@jwt_refresh_token_required
+def refresh():
+    current_user = get_jwt_identity()
+    
+    if current_user:
+        user = {
+            'id': current_user.get('id')
+            'email': current_user.get('email')
+        }
+        res = { 'message': 'Token refreshed succesfully.', 'errorCode': 0, 'token': create_access_token(identity=user) }
+        return Response(json.dumps(res), status=400, mimetype='application/json')
+    else:
+        res = { 'message': 'Authorization failed.', 'errorCode': 1, 'token': None }
+        return Response(json.dumps(res), status=403, mimetype='application/json')
 
 @app.route('/api/user/tasks', methods=['GET'])
 @jwt_required
