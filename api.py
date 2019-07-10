@@ -86,7 +86,7 @@ def login():
     res = { 'message': 'Incorrect email or password.', 'errorCode': 1, 'user': None, 'token': None }
     return Response(json.dumps(res), status=400, mimetype='application/json')
 
-@app.route('/auth/refresh', metods=['GET'])
+@app.route('/auth/refresh', metods=['POST'])
 @jwt_refresh_token_required
 def refresh():
     current_user = get_jwt_identity()
